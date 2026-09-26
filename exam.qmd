@@ -29,27 +29,95 @@ wpop_full <- readr::read_csv(
   file = sti_pop,
   skip = 4)
 
-wpop_full |> 
+wpop_full <- wpop_full |> 
   dplyr::rename(
     country = `Country Name`,
     code = `Country Code`
-  )# |> 
-  dplyr::select(-`2023`)
+  ) |> 
+  dplyr::select(- c(`2023`, `Indicator Name`, `Indicator Code` ))
 
 # 
 
 ```
 
 
-## Exercise 2
+## Exercise 2 (get iso-codes)
 
-## Exercise 3
+```{r}
+wiki_url <- "https://en.wikipedia.org/wiki/ISO_3166-1"
+iso_codes_all <- rvest::read_html(wiki_url) |> 
+  rvest::html_elements("table") |> 
+  rvest::html_table() |> 
+  purrr::pluck(3) |> 
+  dplyr::select(name = 1, iso3 = 3, independent = 6)
+iso_codes_all
+```
+
+
+
+
+## Exercise 3 (iso codes from independent countries)
+
+```{r}
+iso_codes <- iso_codes_all |> 
+  dplyr::filter(independent == "Yes")
+```
+
 
 ## Exercise 4
+
+```{r}
+wpop <- wpop_full |> dplyr::semi_join(iso_codes, by = c("code" = "iso3"))
+```
+
 ## Exercise 5
-## Exercise 6
+
+```{r}
+wpop |>
+  dplyr::left_join(iso_codes, by = c("code" = "iso3")) |> 
+  dplyr::select(name, code, country) |> 
+  dplyr::filter(name != country)
+
+```
+
+
+
+
+## Exercise 6 (get continents)
+
+```{r}
+wiki_url <- "https://en.wikipedia.org/wiki/List_of_sovereign_states_and_dependent_territories_by_continent_(data_file)"
+continents <- rvest::read_html(wiki_url) |> 
+  rvest::html_elements("table") |> 
+  rvest::html_table(convert = FALSE) |> 
+  purrr::pluck(3) |> 
+  dplyr::select(continent = 1, iso3 = 3)
+continents
+```
+
+
+
 ## Exercise 7
-## Exercise 8
+
+```{r}
+wpop2 <- wpop |> 
+  dplyr::left_join(continents, by = dplyr::join_by(code == iso3)) |> 
+  dplyr::relocate(continent)
+wpop2
+```
+
+## Exercise 8 (make pop_long)
+
+```{r}
+pop_long <- wpop2 |> 
+  tidyr::pivot_longer(
+    cols = dplyr::matches("[[:digit:]]{4}"),values_to = "pop",
+    names_to = "year") |> 
+  dplyr::mutate(year = as.integer(year))
+
+pop_long
+```
+
 ## Exercise 9
 ## Exercise 10
 ## Exercise 11
