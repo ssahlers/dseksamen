@@ -119,15 +119,112 @@ pop_long
 ```
 
 ## Exercise 9
+
+```{r}
+pop_long |> 
+  ggplot2::ggplot(ggplot2::aes(x = year, y = pop, group = code))+
+  ggplot2::geom_line(alpha = 0.25)+
+  ggplot2::labs(x = "Year", y = "Population")
+  
+```
+
 ## Exercise 10
+
+```{r}
+pop_index <- pop_long |> 
+  dplyr::group_by(country,continent,code) |> 
+  dplyr::mutate(pop_index = pop/pop[1])
+```
+
 ## Exercise 11
+
+```{r}
+pop_index |> 
+  ggplot2::ggplot(
+    ggplot2::aes(x = year, y = pop_index, group = code))+
+  ggplot2::geom_line(alpha = 0.25)+
+  ggplot2::labs(x = "Year", y = "Population index pr. country")
+```
+
+
 ## Exercise 12
-## Exercise 13
+
+```{r}
+pop_index |> 
+  dplyr::filter(!(code %in% c("ARE", "QAT"))) |> 
+  ggplot2::ggplot(ggplot2::aes(x = year, y = pop_index, group = code)) +
+  ggplot2::geom_line(alpha = 0.25)+
+  ggplot2::labs(x = "Year", y = "Population index pr. country")
+```
+
+## Exercise 13 FIX FIX
+
+```{r}
+growth_long <- pop_long |> 
+  dplyr::group_by(country,continent,code) |> 
+  dplyr::reframe(pop_start = pop[1:(length(pop)-1)], 
+          pop_end = pop[2:length(pop)], 
+          growth = 100*(pop_end-pop_start)/pop_start, 
+          end_year = year[2:length(year)])
+
+growth_long
+```
+
+EXPLAIN
+
+
 ## Exercise 14
+
+```{r}
+growth_long |>
+  ggplot2::ggplot(ggplot2::aes(x = end_year, y = growth, group = code))+
+  ggplot2::geom_line(alpha = 0.25)+
+  ggplot2::labs(x = "Year", y = "Year to year pop growth in pct")
+```
+
+
+
 ## Exercise 15
+
+```{r}
+growth_long |>
+  ggplot2::ggplot(ggplot2::aes(x = end_year, y = growth, group = code))+
+  ggplot2::geom_line(alpha = 0.25)+
+  ggplot2::facet_wrap(~ continent)+
+  ggplot2::labs(x = "Year", y = "Year to year pop growth in pct")
+```
 ## Exercise 16
+
+```{r}
+growth_range <- growth_long |> 
+  dplyr::group_by(country) |> 
+  dplyr::summarise(
+    max_growth = round(max(growth), 2),
+    min_growth = round(min(growth), 2))
+
+growth_range
+```
+
+
 ## Exercise 17
+
+```{r}
+top10 <- growth_range |> 
+  dplyr::arrange(dplyr::desc(max_growth)) |> 
+  head(10)
+
+top10
+```
+
 ## Exercise 18
+
+```{r}
+bottom10 <- growth_range |> 
+  dplyr::arrange(min_growth) |> 
+  head(10)
+
+bottom10
+```
 ## Exercise 19
 ## Exercise 20
 ## Exercise 21
