@@ -29,14 +29,14 @@ wpop_full <- readr::read_csv(
   file = sti_pop,
   skip = 4)
 
-wpop_full <- wpop_full |> 
+wpop_full <- wpop_full |>
   dplyr::rename(
     country = `Country Name`,
     code = `Country Code`
-  ) |> 
-  dplyr::select(- c(`2023`, `Indicator Name`, `Indicator Code` ))
+  ) |>
+  dplyr::select(- c(`2023`, `Indicator Name`, `Indicator Code`))
 
-# 
+#
 
 ```
 
@@ -45,10 +45,10 @@ wpop_full <- wpop_full |>
 
 ```{r}
 wiki_url <- "https://en.wikipedia.org/wiki/ISO_3166-1"
-iso_codes_all <- rvest::read_html(wiki_url) |> 
-  rvest::html_elements("table") |> 
-  rvest::html_table() |> 
-  purrr::pluck(3) |> 
+iso_codes_all <- rvest::read_html(wiki_url) |>
+  rvest::html_elements("table") |>
+  rvest::html_table() |>
+  purrr::pluck(3) |>
   dplyr::select(name = 1, iso3 = 3, independent = 6)
 iso_codes_all
 ```
@@ -59,7 +59,7 @@ iso_codes_all
 ## Exercise 3 (iso codes from independent countries)
 
 ```{r}
-iso_codes <- iso_codes_all |> 
+iso_codes <- iso_codes_all |>
   dplyr::filter(independent == "Yes")
 ```
 
@@ -67,15 +67,16 @@ iso_codes <- iso_codes_all |>
 ## Exercise 4
 
 ```{r}
-wpop <- wpop_full |> dplyr::semi_join(iso_codes, by = c("code" = "iso3"))
+wpop <- wpop_full |>
+  dplyr::semi_join(iso_codes, by = c("code" = "iso3"))
 ```
 
 ## Exercise 5
 
 ```{r}
 wpop |>
-  dplyr::left_join(iso_codes, by = c("code" = "iso3")) |> 
-  dplyr::select(name, code, country) |> 
+  dplyr::left_join(iso_codes, by = c("code" = "iso3")) |>
+  dplyr::select(name, code, country) |>
   dplyr::filter(name != country)
 
 ```
@@ -87,10 +88,10 @@ wpop |>
 
 ```{r}
 wiki_url <- "https://en.wikipedia.org/wiki/List_of_sovereign_states_and_dependent_territories_by_continent_(data_file)"
-continents <- rvest::read_html(wiki_url) |> 
-  rvest::html_elements("table") |> 
-  rvest::html_table(convert = FALSE) |> 
-  purrr::pluck(3) |> 
+continents <- rvest::read_html(wiki_url) |>
+  rvest::html_elements("table") |>
+  rvest::html_table(convert = FALSE) |>
+  purrr::pluck(3) |>
   dplyr::select(continent = 1, iso3 = 3)
 continents
 ```
@@ -100,8 +101,8 @@ continents
 ## Exercise 7
 
 ```{r}
-wpop2 <- wpop |> 
-  dplyr::left_join(continents, by = dplyr::join_by(code == iso3)) |> 
+wpop2 <- wpop |>
+  dplyr::left_join(continents, by = dplyr::join_by(code == iso3)) |>
   dplyr::relocate(continent)
 wpop2
 ```
@@ -109,10 +110,10 @@ wpop2
 ## Exercise 8 (make pop_long)
 
 ```{r}
-pop_long <- wpop2 |> 
+pop_long <- wpop2 |>
   tidyr::pivot_longer(
-    cols = dplyr::matches("[[:digit:]]{4}"),values_to = "pop",
-    names_to = "year") |> 
+    cols = dplyr::matches("[[:digit:]]{4}"), values_to = "pop",
+    names_to = "year") |>
   dplyr::mutate(year = as.integer(year))
 
 pop_long
@@ -121,28 +122,28 @@ pop_long
 ## Exercise 9
 
 ```{r}
-pop_long |> 
-  ggplot2::ggplot(ggplot2::aes(x = year, y = pop, group = code))+
-  ggplot2::geom_line(alpha = 0.25)+
+pop_long |>
+  ggplot2::ggplot(ggplot2::aes(x = year, y = pop, group = code)) +
+  ggplot2::geom_line(alpha = 0.25) +
   ggplot2::labs(x = "Year", y = "Population")
-  
+
 ```
 
 ## Exercise 10
 
 ```{r}
-pop_index <- pop_long |> 
-  dplyr::group_by(country,continent,code) |> 
-  dplyr::mutate(pop_index = pop/pop[1])
+pop_index <- pop_long |>
+  dplyr::group_by(country, continent, code) |>
+  dplyr::mutate(pop_index = pop / pop[1])
 ```
 
 ## Exercise 11
 
 ```{r}
-pop_index |> 
+pop_index |>
   ggplot2::ggplot(
-    ggplot2::aes(x = year, y = pop_index, group = code))+
-  ggplot2::geom_line(alpha = 0.25)+
+    ggplot2::aes(x = year, y = pop_index, group = code)) +
+  ggplot2::geom_line(alpha = 0.25) +
   ggplot2::labs(x = "Year", y = "Population index pr. country")
 ```
 
@@ -150,21 +151,21 @@ pop_index |>
 ## Exercise 12
 
 ```{r}
-pop_index |> 
-  dplyr::filter(!(code %in% c("ARE", "QAT"))) |> 
+pop_index |>
+  dplyr::filter(!(code %in% c("ARE", "QAT"))) |>
   ggplot2::ggplot(ggplot2::aes(x = year, y = pop_index, group = code)) +
-  ggplot2::geom_line(alpha = 0.25)+
+  ggplot2::geom_line(alpha = 0.25) +
   ggplot2::labs(x = "Year", y = "Population index pr. country")
 ```
 
 ## Exercise 13 FIX FIX
 
 ```{r}
-growth_long <- pop_long |> 
-  dplyr::group_by(country,continent,code) |> 
-  dplyr::reframe(pop_start = pop[1:(length(pop)-1)], 
-          pop_end = pop[2:length(pop)], 
-          growth = 100*(pop_end-pop_start)/pop_start, 
+growth_long <- pop_long |>
+  dplyr::group_by(country, continent, code) |>
+  dplyr::reframe(pop_start = pop[1:(length(pop) - 1)],
+          pop_end = pop[2:length(pop)],
+          growth = 100 * (pop_end - pop_start) / pop_start,
           end_year = year[2:length(year)])
 
 growth_long
@@ -177,8 +178,8 @@ EXPLAIN
 
 ```{r}
 growth_long |>
-  ggplot2::ggplot(ggplot2::aes(x = end_year, y = growth, group = code))+
-  ggplot2::geom_line(alpha = 0.25)+
+  ggplot2::ggplot(ggplot2::aes(x = end_year, y = growth, group = code)) +
+  ggplot2::geom_line(alpha = 0.25) +
   ggplot2::labs(x = "Year", y = "Year to year pop growth in pct")
 ```
 
@@ -188,16 +189,16 @@ growth_long |>
 
 ```{r}
 growth_long |>
-  ggplot2::ggplot(ggplot2::aes(x = end_year, y = growth, group = code))+
-  ggplot2::geom_line(alpha = 0.25)+
-  ggplot2::facet_wrap(~ continent)+
+  ggplot2::ggplot(ggplot2::aes(x = end_year, y = growth, group = code)) +
+  ggplot2::geom_line(alpha = 0.25) +
+  ggplot2::facet_wrap(~ continent) +
   ggplot2::labs(x = "Year", y = "Year to year pop growth in pct")
 ```
 ## Exercise 16
 
 ```{r}
-growth_range <- growth_long |> 
-  dplyr::group_by(country) |> 
+growth_range <- growth_long |>
+  dplyr::group_by(country) |>
   dplyr::summarise(
     max_growth = round(max(growth), 2),
     min_growth = round(min(growth), 2))
@@ -209,8 +210,8 @@ growth_range
 ## Exercise 17
 
 ```{r}
-top10 <- growth_range |> 
-  dplyr::arrange(dplyr::desc(max_growth)) |> 
+top10 <- growth_range |>
+  dplyr::arrange(dplyr::desc(max_growth)) |>
   head(10)
 
 top10
@@ -219,14 +220,28 @@ top10
 ## Exercise 18
 
 ```{r}
-bottom10 <- growth_range |> 
-  dplyr::arrange(min_growth) |> 
+bottom10 <- growth_range |>
+  dplyr::arrange(min_growth) |>
   head(10)
 
 bottom10
 ```
 ## Exercise 19
+
+```{r}
+growth_long |>
+  dplyr::filter(country %in% top10$country) |>
+  ggplot2::ggplot(ggplot2::aes(x = end_year, y = growth, color = country)) +
+  ggplot2::geom_line()
+```
+
 ## Exercise 20
+
+```{r}
+growth_long |>
+  tidyr::pivot_longer()
+```
+
 ## Exercise 21
 ## Exercise 22
 ## Exercise 23
