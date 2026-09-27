@@ -238,11 +238,67 @@ growth_long |>
 ## Exercise 20
 
 ```{r}
-growth_long |>
-  tidyr::pivot_longer()
+growth <- growth_long |>
+  dplyr::select(-pop_end, -pop_start) |> 
+  tidyr::pivot_wider(
+    names_from = end_year, values_from = growth)
+
+warning("3 missing cols!")
+growth
 ```
 
 ## Exercise 21
+
+```{r}
+growth_dist <- growth 
+
+row.names(growth_dist) <- growth_dist$country
+  
+growth_dist <- growth_dist |> 
+  dplyr::select(-dplyr::where(is.character)) |>
+  dist()
+
+#growth_mat <- as.matrix(growth_dist)#[1:193, 1:193]
+
+
+hc <- hclust(d = growth_dist)
+
+cl <- cutree(hc, k = 9)
+
+growth_clust <- growth |> 
+  dplyr::mutate(clust = as.factor(cl)) |> 
+  dplyr::relocate(clust)
+
+
+#plot(hc, cex = 0.5)
+
+```
+
+
 ## Exercise 22
+
+```{r}
+growth_clust |> 
+  dplyr::group_split(clust) |> 
+  lapply(function(x) x$country) |> 
+  pander::pander()
+```
+
 ## Exercise 23
+
+```{r}
+growth_clust_long <- growth_clust |> 
+  tidyr::pivot_longer(
+    cols = dplyr::matches("[[:digit:]]{4}"), values_to = "growth",
+    names_to = "year") |>
+  dplyr::mutate(year = as.integer(year))
+  
+
+growth_clust_long |> 
+  ggplot2::ggplot(ggplot2::aes(x = year, y = growth, group = country)) +
+  ggplot2::geom_line(alpha = 0.25) +
+  ggplot2::facet_wrap(~clust) +
+  ggplot2::labs(x = "Year", y = "Year-to-year population growth in pct.")
+```
+
 ## Exercise 24
