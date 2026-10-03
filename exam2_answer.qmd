@@ -17,7 +17,6 @@ train <- dat[i_train,]
 test <- dat[-i_train,]
 ```
 
-
 ## Exercise 1
 
 ```{r}
@@ -31,6 +30,7 @@ doBy::response_plot(
   
 
 ```
+
 ## Exercise 2
 
 Missing
@@ -49,9 +49,7 @@ rpart.plot(tree1)
 
 ## Exercise 1
 
-Det lægges til grund, at blodtryk, hudtykkelse, bmi, insulin og glukose alle 
-skal være skarpt større en 0, da dette er en forudsætning for at patienten er i
-live.
+Det lægges til grund, at blodtryk, hudtykkelse, bmi, insulin og glukose alle skal være skarpt større en 0, da dette er en forudsætning for at patienten er i live.
 
 ```{r}
 # Absolut sti til data, uanset system:
@@ -90,8 +88,8 @@ library(patchwork)
 geom_diabetes <- function(x_var) {
   p1 <- dat |> 
   ggplot2::ggplot(aes(y = Outcome, x = .data[[x_var]]))+
-  ggplot2::geom_point() +
-  geom_jitter(width = 0.2, height = 0.2, alpha = 0.6)+
+  #ggplot2::geom_point() +
+  geom_jitter(width = 0.2, height = 0.2, alpha = 0.2)+
   geom_smooth(method = "loess", formula = "y ~ x")
   
   p1
@@ -105,7 +103,33 @@ hest <- lapply(plotvar, geom_diabetes)
 patchwork::wrap_plots(hest, ncol = 3)
 ```
 
-
-
-
 ## Exercise 3
+
+Ensure `Outcome` is a `factor`:
+
+```{r}
+library(dplyr)
+dat <- dat |> 
+  mutate(Outcome = as.factor(Outcome))
+```
+
+and split the data in a training and test set as follows:
+
+```{r}
+set.seed(202) # for reproducibility
+i_train <- sample(nrow(dat), .5*nrow(dat))
+train <- dat[i_train,]
+test <- dat[-i_train,]
+```
+
+Specify a number of classification models and report the corresponding confusion matrix for the test data. You must include at least one of each of the following:
+
+1.  logistic regression with stepwise selection (glm / step)
+
+2.   regression tree (rpart)
+
+3.  random forest (randomForest)
+
+4.  linear/quadratic/regularized discriminant analysis (use sda_formula() for regularized – see updated notes).
+
+### 3.2 Regression tree
