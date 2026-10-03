@@ -302,3 +302,14 @@ growth_clust_long |>
 ```
 
 ## Exercise 24
+
+
+```{r}
+agg_year <- 5
+aggr_growth_long <- growth_long |>
+  dplyr::mutate(period=((end_year - min(end_year)) %/% agg_year) * agg_year + min(end_year)) |> 
+  dplyr::group_by(period, code, country, continent) |> dplyr::summarise(pop = mean(growth))
+
+#stop("Fix")
+```
+

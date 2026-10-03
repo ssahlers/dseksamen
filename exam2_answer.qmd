@@ -1,0 +1,111 @@
+---
+title: "exam_2_answer"
+author: "Søren Ahlers"
+format: 
+  html:
+    embed-resources: true
+editor: visual
+---
+
+## Quarto
+
+```{r}
+dat <- doBy::personality
+set.seed(101) # for reproducibility
+i_train <- sample(nrow(dat), .5*nrow(dat))
+train <- dat[i_train,]
+test <- dat[-i_train,]
+```
+
+
+## Exercise 1
+
+```{r}
+library(ggplot2)
+doBy::response_plot(
+  dat,
+  easygon ~ .,
+  geoms = ggplot2::geom_point(),
+  #global_aes = ggplot2::aes()
+  ncol = 5)#+
+  
+
+```
+## Exercise 2
+
+Missing
+
+## Exercise 3
+
+```{r}
+ tree1 <- rpart::rpart(data = dat, formula = easygon ~ .)
+library(rpart.plot)
+rpart.plot(tree1)
+```
+
+# Part II
+
+## Exercise 1
+
+## Exercise 1
+
+Det lægges til grund, at blodtryk, hudtykkelse, bmi, insulin og glukose alle 
+skal være skarpt større en 0, da dette er en forudsætning for at patienten er i
+live.
+
+```{r}
+# Absolut sti til data, uanset system:
+sti_dia <- here::here("diabetes.csv")
+
+dat_raw <- readr::read_csv(
+  file = sti_dia)
+
+
+
+cols <- c("BloodPressure", "SkinThickness", "BMI", "Insulin", "Glucose")
+
+# Værdier erstattes med NA:
+dat <- dat_raw |> 
+  # For at være i live skal man have hud og blodtryk, dvs. hvis disse er 0, så
+  # det en anomali:
+  dplyr::mutate(
+    dplyr::across(dplyr::all_of(cols), ~ dplyr::na_if(., 0))
+  )
+
+dat <- dat |> 
+  # Der filtreres, så alle rækker med NA-værdier fjernes:
+  dplyr::filter(!dplyr::if_any(dplyr::all_of(colnames(dat)), ~ is.na(.)))
+
+
+dim(dat)
+
+```
+
+## Exercise 2
+
+```{r}
+library(ggplot2)
+library(patchwork)
+
+geom_diabetes <- function(x_var) {
+  p1 <- dat |> 
+  ggplot2::ggplot(aes(y = Outcome, x = .data[[x_var]]))+
+  ggplot2::geom_point() +
+  geom_jitter(width = 0.2, height = 0.2, alpha = 0.6)+
+  geom_smooth(method = "loess", formula = "y ~ x")
+  
+  p1
+}
+
+plotvar <- colnames(dat)[1:8]
+
+hest <- lapply(plotvar, geom_diabetes)
+
+
+patchwork::wrap_plots(hest, ncol = 3)
+```
+
+
+
+
+## Exercise 3
